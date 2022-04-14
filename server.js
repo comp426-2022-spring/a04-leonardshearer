@@ -78,20 +78,18 @@ app.get('/app/flip/call/tails', (req, res) => {
     res.status(200).json(coin.flipACoin('tails'))
 })
 
-if (args['debug'] === 'true') {
-    app.get('/app/log/access', (req, res) => {
-        try {
-            const query = db.prepare('SELECT * from accesslog').all()
-            res.status(200).json(query)
-        } catch {
-            console.error(e)
-        }
-    })
+app.get('/app/log/access', (req, res) => {
+    try {
+        const query = db.prepare('SELECT * from accesslog').all()
+        res.status(200).json(query)
+    } catch {
+        console.error(e)
+    }
+})
 
-    app.get('/app/error', (req, res) => {
-        throw new Error('Error test successful.')
-    })
-}
+app.get('/app/error', (req, res) => {
+    throw new Error('Error test successful.')
+})
 
 app.use(function (req, res) {
     res.type('text/plain')
