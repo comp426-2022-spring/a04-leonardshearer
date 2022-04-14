@@ -1,9 +1,11 @@
 import * as coin from './modules/coin.mjs'
 import express from 'express'
 import minimist from 'minimist'
+import { getDb } from './database.js'
 
 const app = express()
 const args = minimist(process.argv.slice(2))
+const db = getDb()
 
 console.log(args)
 
@@ -34,6 +36,21 @@ const server = app.listen(HTTP_PORT, () => {
     console.log('App listening on port %PORT%'.replace('%PORT%', HTTP_PORT))
 });
 
+const logging = (req, res, next) => {
+    const query = db.prepare(`
+        INSERT INTO accesslog (remoteaddr, remoteuser, time, method, 
+        url, protocol, httpversion, status, referer, useragent)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+    )
+    const json = query.run(req.ip, req.user, Date.now(), req.method, req.url, req.httpVersion,
+        req.protocol, req.statusCode, req.headers['referers'], req.headers['user-agent']
+    )
+    next()
+}
+
+app.use(logging)
+
 app.get('/app', (req, res) => {
     res.type('text/plain')
     res.status(200).end('OK')
@@ -60,6 +77,12 @@ app.get('/app/flip/call/tails', (req, res) => {
     res.type('application/json')
     res.status(200).json(coin.flipACoin('tails'))
 });
+
+if (args['debug'] === 'true') {
+    app.get('/app/log/access', (req, res) => {
+
+    });
+}
 
 app.use(function (req, res) {
     res.type('text/plain')
